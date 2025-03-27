@@ -865,7 +865,7 @@ def plotSpectrogram(S, figsize=[8,15], minfreq=0, maxfreq=25, tIndent=0.05, bInd
     return fig, ax1, ax2
 
 def multiDaySpectrogram(S, averageLength=3600, fftLength=60, minFreq=0.05, maxFreq=25, cmap='magma', dateLimits=None, 
-                        vmin=0.2, vmax=0.7, plotAverage=True):
+                        vmin=0.2, vmax=0.7, plotAverage=True): 
 
 
     spectraG = []
@@ -883,19 +883,22 @@ def multiDaySpectrogram(S, averageLength=3600, fftLength=60, minFreq=0.05, maxFr
     if dateLimits:
         S.trim(starttime=dateLimits[0], endtime=dateLimits[1])
     cntr = 1
-    for wst in S.slide(window_length=averageLength, step=averageLength, include_partial_windows=False):
+    for wst in S.slide(window_length=averageLength, step=averageLength/5, include_partial_windows=False): # step=averagelegnth = 3600 to 900? or 1800?
         if cntr%24 == 0:
             print(wst[0].stats.starttime)
-        F, G = stackSpectraContinuous(wst.detrend(type='demean'), window_length=fftLength, step=fftLength/2)
+        F, G = stackSpectraContinuous(wst.detrend(type='demean'), window_length=fftLength, step=fftLength/2) # reduce fftlength for more freq resolution (more bins, smaller height)
         spectraF.append(F)
         spectraG.append(np.abs(G))
         stTimes.append(wst[0].stats.starttime)
         cntr += 1
 
     # Pre-process for spectrogram
-    alldates = [nowtime.matplotlib_date for nowtime in stTimes]
-    freq = spectraF[0]
-    specgram = np.flipud(np.array(spectraG).T)
+    alldates = [nowtime.matplotlib_date for nowtime in stTimes] # x dimension width for pixel
+    freq = spectraF[0]                                          # argument for y dimension width for pixel
+    specgram = np.flipud(np.array(spectraG).T)                  # data that fills the pixels
+    print(len(alldates))
+    print(len(freq))
+
     # db scale and remove zero/offset for amplitude
     if dbscale:
         specgram = 10 * np.log10(specgram[:, :])
@@ -940,7 +943,7 @@ def multiDaySpectrogram(S, averageLength=3600, fftLength=60, minFreq=0.05, maxFr
         else:
             ax = f.add_subplot(111)
 
-    ax.pcolormesh(alldates, np.flipud(freq), specgram, norm=norm, cmap=cmap, shading='gouraud')
+    ax.pcolormesh(alldates, np.flipud(freq), specgram, norm=norm, cmap=cmap, shading='gouraud') # sets pixel dimensions
     locator = mdates.AutoDateLocator(minticks=5, maxticks=15)
     formatter = mdates.ConciseDateFormatter(locator)
     ax.xaxis.set_major_locator(locator)
