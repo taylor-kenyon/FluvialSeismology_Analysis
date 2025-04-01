@@ -862,7 +862,7 @@ def plotSpectrogram(S, figsize=[8,15], minfreq=0, maxfreq=25, tIndent=0.05, bInd
     ax2.xaxis.set_major_locator(locator)
     ax2.xaxis.set_major_formatter(formatter)
 
-    return fig, ax1, ax2
+    return fig, ax1, ax2fig, ax1, ax2plot
 
 def multiDaySpectrogram(S, averageLength=3600, fftLength=60, minFreq=0.05, maxFreq=25, cmap='magma', dateLimits=None, 
                         vmin=0.2, vmax=0.7, plotAverage=True): 
@@ -883,21 +883,23 @@ def multiDaySpectrogram(S, averageLength=3600, fftLength=60, minFreq=0.05, maxFr
     if dateLimits:
         S.trim(starttime=dateLimits[0], endtime=dateLimits[1])
     cntr = 1
-    for wst in S.slide(window_length=averageLength, step=averageLength/5, include_partial_windows=False): # step=averagelegnth = 3600 to 900? or 1800?
+    for wst in S.slide(window_length=averageLength, step=averageLength/10, include_partial_windows=False):  # step=averagelegnth/10 --> 3 min pixel widths/6 mins cut off on end
+                                                                                                            # --> 6 mins added to spectra, 6 mins subtracted from RSAM axis
         if cntr%24 == 0:
             print(wst[0].stats.starttime)
-        F, G = stackSpectraContinuous(wst.detrend(type='demean'), window_length=fftLength, step=fftLength/2) # reduce fftlength for more freq resolution (more bins, smaller height)
+        F, G = stackSpectraContinuous(wst.detrend(type='demean'), window_length=fftLength, step=fftLength/2) # reduce fftlength for more freq resolution
+                                                                                                             # (more bins, smaller height)
         spectraF.append(F)
         spectraG.append(np.abs(G))
         stTimes.append(wst[0].stats.starttime)
         cntr += 1
+    #print(f"Window {cntr}: Start Time = {wst[0].stats.starttime}, End Time = {wst[0].stats.endtime}")
+    #print(f"Full: Start Time = {stTimes[0]}, End Time = {stTimes[-1]}")
 
     # Pre-process for spectrogram
-    alldates = [nowtime.matplotlib_date for nowtime in stTimes] # x dimension width for pixel
-    freq = spectraF[0]                                          # argument for y dimension width for pixel
+    alldates = [nowtime.matplotlib_date for nowtime in stTimes] # x dimension width for pixels
+    freq = spectraF[0]                                          # argument for y dimension height for pixels
     specgram = np.flipud(np.array(spectraG).T)                  # data that fills the pixels
-    print(len(alldates))
-    print(len(freq))
 
     # db scale and remove zero/offset for amplitude
     if dbscale:
@@ -928,7 +930,7 @@ def multiDaySpectrogram(S, averageLength=3600, fftLength=60, minFreq=0.05, maxFr
             ax0.get_xaxis().set_visible(False)
             #ax0.xaxis.set_ticklabels([])
             ax = f.add_subplot(gs[1:4,0], sharex=ax0)
-            ax.get_xaxis().set_visible(False)
+            #ax.get_xaxis().set_visible(False)
         else:
             ax = f.add_subplot(211)
     else:
@@ -948,7 +950,12 @@ def multiDaySpectrogram(S, averageLength=3600, fftLength=60, minFreq=0.05, maxFr
     formatter = mdates.ConciseDateFormatter(locator)
     ax.xaxis.set_major_locator(locator)
     ax.xaxis.set_major_formatter(formatter)
-    
+
+    # set x-axis limits based on the range of alldates
+    start_time = alldates[0] # first timestamp in data
+    end_time = alldates[-1]  # last timestamp in data
+    end_time_minus = end_time - (6*60)
+    ax.set_xlim(start_time, end_time)
 
     if twoPlots:
         ax.set_ylim([1,maxFreq])
@@ -964,6 +971,12 @@ def multiDaySpectrogram(S, averageLength=3600, fftLength=60, minFreq=0.05, maxFr
         formatter = mdates.ConciseDateFormatter(locator)
         ax2.xaxis.set_major_locator(locator)
         ax2.xaxis.set_major_formatter(formatter)
+        
+        # spectrogram x-limits
+        ax2.set_xlim(start_time, end_time)  
+        # adjust RSAM plot x-limits, stops before added time
+        ax0.set_xlim(start_time, end_time_minus) # ax0 for the RSAM plot to stop at midnight
+        
         ax2.set_yscale('log')
         ax2.set_ylim([minFreq,1])
         ax2.set_xlabel('Date, UTC')
@@ -974,7 +987,6 @@ def multiDaySpectrogram(S, averageLength=3600, fftLength=60, minFreq=0.05, maxFr
         ax.set_ylabel('Frequency, Hz')
 
     return f
-
 
 
 def detectClip(trace):
