@@ -883,8 +883,8 @@ def multiDaySpectrogram(S, averageLength=3600, fftLength=60, minFreq=0.05, maxFr
     if dateLimits:
         S.trim(starttime=dateLimits[0], endtime=dateLimits[1])
     cntr = 1
-    for wst in S.slide(window_length=averageLength, step=averageLength/10, include_partial_windows=False):  # step=averagelegnth/10 --> 3 min pixel widths/6 mins cut off on end
-                                                                                                            # --> 6 mins added to spectra, 6 mins subtracted from RSAM axis
+    for wst in S.slide(window_length=averageLength, step=averageLength/10, include_partial_windows=True):  # step=averagelegnth/10 --> 3 min pixel widths/6 mins cut off on end
+                                                                                                           # --> 6 mins added to spectra, 6 mins subtracted from RSAM axis
         if cntr%24 == 0:
             print(wst[0].stats.starttime)
         F, G = stackSpectraContinuous(wst.detrend(type='demean'), window_length=fftLength, step=fftLength/2) # reduce fftlength for more freq resolution
@@ -951,7 +951,7 @@ def multiDaySpectrogram(S, averageLength=3600, fftLength=60, minFreq=0.05, maxFr
     ax.xaxis.set_major_locator(locator)
     ax.xaxis.set_major_formatter(formatter)
 
-    # set x-axis limits based on the range of alldates
+    # setting up x-axis limits based on the range of alldates
     start_time = alldates[0] # first timestamp in data
     end_time = alldates[-1]  # last timestamp in data
     end_time_minus = end_time - (6*60)
@@ -975,7 +975,7 @@ def multiDaySpectrogram(S, averageLength=3600, fftLength=60, minFreq=0.05, maxFr
         # spectrogram x-limits
         ax2.set_xlim(start_time, end_time)  
         # adjust RSAM plot x-limits, stops before added time
-        ax0.set_xlim(start_time, end_time_minus) # ax0 for the RSAM plot to stop at midnight
+        ax0.set_xlim(start_time, end_time_minus) # ax0 for the RSAM plot
         
         ax2.set_yscale('log')
         ax2.set_ylim([minFreq,1])
