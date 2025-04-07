@@ -6,21 +6,21 @@ import os
 # setting up parameters
 
 # define start and end time for the data range
-start_date = UTCDateTime(2023, 8, 14)  # Start time
-end_date = UTCDateTime(2023, 8, 14)  # End time
+start_date = UTCDateTime(2023, 7, 23)  # Start time
+end_date = UTCDateTime(2023, 7, 24)  # End time
 delta = 86400  # 1 day in seconds
 stas = [2301, 2302, 2303, 2304, 2305, 2306, 2307, 2308, 2309, 2310, 2311, 2312, 2313, 2314, 2315, 2316, 
         'G2301', 'G2302', 'G2303', 'G2304', 'G2305', 'G2306', 'G2307', 'G2308', 'G2309', 'G2310', 'G2311',
         'G2312', 'G2313', 'G2314', 'G2315', 'G2316'] 
-stas = ['ZE.2301..GPZ']  # Station IDs
+stas = ['ZE.2304..GP1'] # station IDs
 
 # set station info
 nowsta = stas[0]
 network, station, location, channel = nowsta.split('.')
-print(f"Using station: {nowsta}")
+print(f"Station: {nowsta}")
 
 # define path where .mseed files are stored
-path = 'C:/Users/zzawol/Documents/seismic-data-iris/seismic_data/NO2301/GPZ'
+path = 'C:/Users/zzawol/Documents/seismic-data-iris/seismic_data/NO2304/GP1'
 
 # check if path exists, create if not
 if not os.path.exists(path):
@@ -47,7 +47,7 @@ c.set_credentials(username, password)
 # function to get data from IRIS
 def get_iris_data(t1, t2, stas, path):
     """Function to get data from IRIS if not already downloaded"""
-    tNow = t1  # start time
+    tNow = t1 # start time
     extract_delta = 1800 # 30 mins in seconds
 
     while tNow < t2:
@@ -68,7 +68,7 @@ def get_iris_data(t1, t2, stas, path):
                     break
 
             if file_exists:
-                print(f"Data for {nowsta} from {tNow} to {tNow + extract_delta} already exists. Skipping download.")
+                print(f"Data for {nowsta} from {tNow} to {tNow + extract_delta} already stored locally. Skipping download.")
             else:
                 print(f"Retrieving data for {nowsta} from {tNow} to {tNow + extract_delta}")
                 try:
@@ -88,12 +88,10 @@ def get_iris_data(t1, t2, stas, path):
                         print(f"Saved {filename}")
                 except Exception as e:
                     print(f"Error retrieving data for {nowsta} from {tNow} to {tNow + extract_delta}: {e}")
-
-        print("\n")
         
         tNow += extract_delta  # move to next interval
 
     print('Data retrieval and saving completed.')
 
 # call function independently if only want data
-get_iris_data(t1=start_date, t2=end_date, stas=stas, path=path)
+#get_iris_data(t1=start_date, t2=end_date, stas=stas, path=path)
