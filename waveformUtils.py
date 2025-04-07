@@ -886,7 +886,8 @@ def multiDaySpectrogram(S, averageLength=3600, fftLength=60, minFreq=0.05, maxFr
     for wst in S.slide(window_length=averageLength, step=averageLength/10, include_partial_windows=True):  # step=averagelegnth/10 --> 3 min pixel widths/6 mins cut off on end
                                                                                                            # --> 6 mins added to spectra, 6 mins subtracted from RSAM axis
         if cntr%24 == 0:
-            print(wst[0].stats.starttime)
+            wst[0].stats.starttime
+            #print(f"Processing window: {wst[0].stats.starttime}")
         F, G = stackSpectraContinuous(wst.detrend(type='demean'), window_length=fftLength, step=fftLength/2) # reduce fftlength for more freq resolution
                                                                                                              # (more bins, smaller height)
         spectraF.append(F)
@@ -985,6 +986,8 @@ def multiDaySpectrogram(S, averageLength=3600, fftLength=60, minFreq=0.05, maxFr
         ax.set_ylim([minFreq,maxFreq])
         ax.set_xlabel('Date, UTC')
         ax.set_ylabel('Frequency, Hz')
+
+    #print('continue')
 
     return f
 
