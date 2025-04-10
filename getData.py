@@ -81,6 +81,9 @@ def get_iris_data(t1, t2, stas, path):
 
 
 # format for running independently 
+# these parameteres will be ignored when Screening_Tool calls getData since we will set the parameters in Screening_Tool
+# so we dont have to comment and uncomment when using this file in Screening_Tool vs independently 
+
 if __name__ == "__main__":
     # set parameters here for standalone testing
     print("using function direct method")
