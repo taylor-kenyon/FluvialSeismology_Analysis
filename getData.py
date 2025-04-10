@@ -80,16 +80,20 @@ def get_iris_data(t1, t2, stas, path):
     print('Data retrieval and saving completed.')
 
 
-# call function independently if only want data - uncomment parameters and function call: 
+# format for running independently 
+if __name__ == "__main__":
+    # set parameters here for standalone testing
+    print("using function direct method")
+    start_date = UTCDateTime(2023, 8, 14, 14) # Start time
+    end_date = UTCDateTime(2023, 8, 14, 18) # End time
+    stas = [2301, 2302, 2303, 2304, 2305, 2306, 2307, 2308, 2309, 2310, 2311, 2312, 2313, 2314, 2315, 2316, 
+            'G2301', 'G2302', 'G2303', 'G2304', 'G2305', 'G2306', 'G2307', 'G2308', 'G2309', 'G2310', 'G2311',
+            'G2312', 'G2313', 'G2314', 'G2315', 'G2316'] 
+    stas = ['ZE.2301..GPZ'] # station IDs
+    nowsta = stas[0]
+    network, station, location, channel = nowsta.split('.')
+    path = f'C:/Users/zzawol/Documents/seismic-data-iris/seismic_data/NO{station}/{channel}'
+    get_iris_data(t1=start_date, t2=end_date, stas=stas, path=path)
 
-# define start and end time for the data range
-# start_date = UTCDateTime(2023, 8, 14)  # Start time
-# end_date = UTCDateTime(2023, 8, 14, 3)  # End time
-# stas = [2301, 2302, 2303, 2304, 2305, 2306, 2307, 2308, 2309, 2310, 2311, 2312, 2313, 2314, 2315, 2316, 
-#         'G2301', 'G2302', 'G2303', 'G2304', 'G2305', 'G2306', 'G2307', 'G2308', 'G2309', 'G2310', 'G2311',
-#         'G2312', 'G2313', 'G2314', 'G2315', 'G2316'] 
-# stas = ['ZE.2301..GPZ'] # station IDs
-# path = 'C:/Users/zzawol/Documents/seismic-data-iris/seismic_data/NO2301/GPZ' # path where to store .mseed files
-
-# # call function
-# get_iris_data(t1=start_date, t2=end_date, stas=stas, path=path)
+# run in jupyter by: %run getData.py
+# or run in terminal by: python getData.py
