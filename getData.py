@@ -7,19 +7,6 @@ import os
 def get_iris_data(t1, t2, stas, path):
     """Function to get data from IRIS if not already downloaded"""
 
-    # set up IRIS client
-    DATASELECT = 'http://service.iris.edu/ph5ws/dataselect/1'
-    c = fdsn.client.Client(
-        service_mappings={
-            'dataselect': DATASELECT,
-        },
-    )
-
-    # IRIS credentials
-    username = 'zoe_zawol@partner.nps.gov'
-    password = 'rJXKed4LZUHUE05g'
-    c.set_credentials(username, password)
-
     # check if path exists, create if not
     if not os.path.exists(path):
         print(f"Path '{path}' does not exist. Creating directory...")
@@ -31,7 +18,30 @@ def get_iris_data(t1, t2, stas, path):
     nowsta = stas[0]
     network, station, location, channel = nowsta.split('.')
     print(f"Station: {nowsta}")
-    file_pattern = f'{path}/{network}.{station}.*.{channel}*.mseed'
+    file_pattern = f'{path}/{network}.{station}.{location}.{channel}*.mseed' # i think this line is unnecessary
+
+    # set up IRIS client
+    if network == "ZE": #'ph5ws/dataselect' for PH5 (3C node)
+        DATASELECT = 'http://service.iris.edu/ph5ws/dataselect/1'
+        c = fdsn.client.Client(
+            service_mappings={
+                'dataselect': DATASELECT,
+            },
+        )
+    elif network == "ZD": #'fdsnws/dataselect' for MINIseed (GEM and RT130)
+        DATASELECT = 'http://service.iris.edu/fdsnws/dataselect/1'
+        c = fdsn.client.Client(
+            service_mappings={
+                'dataselect': DATASELECT,
+            },
+        )
+    else:
+        raise ValueError(f"Unknown network code: {network}")
+
+    # IRIS credentials
+    username = 'zoe_zawol@partner.nps.gov'
+    password = 'rJXKed4LZUHUE05g'
+    c.set_credentials(username, password)
 
     tNow = t1 # start time
     extract_delta = 1800 # 30 mins in seconds
@@ -44,7 +54,7 @@ def get_iris_data(t1, t2, stas, path):
             existing_files = [f for f in os.listdir(path) if f.endswith('.mseed')]
 
             # construct filename pattern to match for this time period
-            filename_pattern = f'{network}.{station}..{channel}_{tNow.strftime("%Y%m%d%H%M%S")}.mseed'
+            filename_pattern = f'{network}.{station}.{location}.{channel}_{tNow.strftime("%Y%m%d%H%M%S")}.mseed'
 
             # check if any required .mseed files are already downloaded
             file_exists = False
@@ -62,8 +72,12 @@ def get_iris_data(t1, t2, stas, path):
                     S = c.get_waveforms(network, station, location, channel, tNow, tNow + extract_delta)
                     print(f"Data for {nowsta} retrieved successfully.")
 
-                    print('Resampling data...')
-                    S.resample(350)  # resample to 350 Hz/s
+                    if network == "ZE":
+                        print('Resampling to 350')
+                        S.resample(350)  # resample to 350 Hz/s for 3C, 120 Hz/s for GEM
+                    if network == "ZD":
+                        print('Resampling to 120')
+                        S.resample(120)
 
                     # save data to .mseed files
                     print('Saving data to .mseed files...')
@@ -86,16 +100,24 @@ def get_iris_data(t1, t2, stas, path):
 
 if __name__ == "__main__":
     # set parameters here for standalone testing
-    print("using function direct method")
-    start_date = UTCDateTime(2023, 8, 14, 14) # Start time
-    end_date = UTCDateTime(2023, 8, 14, 18) # End time
+    start_date = UTCDateTime(2024, 7, 31) # Start time
+    end_date = UTCDateTime(2024, 8, 4) # End time
     stas = [2301, 2302, 2303, 2304, 2305, 2306, 2307, 2308, 2309, 2310, 2311, 2312, 2313, 2314, 2315, 2316, 
             'G2301', 'G2302', 'G2303', 'G2304', 'G2305', 'G2306', 'G2307', 'G2308', 'G2309', 'G2310', 'G2311',
             'G2312', 'G2313', 'G2314', 'G2315', 'G2316'] 
-    stas = ['ZE.2301..GPZ'] # station IDs
+    stas = ['ZE.2411..GPZ'] # 3C station ID
+    #stas = ['ZD.G2310.01.HDF'] # GEM station ID
     nowsta = stas[0]
     network, station, location, channel = nowsta.split('.')
-    path = f'C:/Users/zzawol/Documents/seismic-data-iris/seismic_data/NO{station}/{channel}'
+
+    # define path where .mseed files are stored
+    if network == "ZE":
+        path = f'C:/Users/zzawol/Documents/iris-data/seismic_data/NO{station}/{channel}'
+    elif network == "ZD":
+        path = f'C:/Users/zzawol/Documents/iris-data/infrasound_data/{station}'
+    else:
+        raise ValueError(f"Unknown network code: {network}")
+
     get_iris_data(t1=start_date, t2=end_date, stas=stas, path=path)
 
 # run in jupyter by: %run getData.py
