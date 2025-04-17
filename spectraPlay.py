@@ -17,7 +17,7 @@ def plot_spectrogram(S, t1, t2, stas):
     if network == "ZE":
         maxFreq = 150
     elif network == "ZD":
-        maxFreq = 60 # edit value if resample changes
+        maxFreq = 50 # edit value if resample changes?
     else:
         raise ValueError(f"Unknown network code: {network}")
 
