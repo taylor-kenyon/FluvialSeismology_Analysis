@@ -13,61 +13,42 @@ import waveformUtils
 import getData
 import PPSD
 import spectraPlay
+import set_workdir
 import importlib
+# in case .py files have been updated
 importlib.reload(waveformUtils)
 importlib.reload(getData)
 importlib.reload(PPSD)
 importlib.reload(spectraPlay)
-
-# setting up parameters
-
-# define start and end time for the data range
-start_date = UTCDateTime(2023, 7, 24) # Start time
-end_date = UTCDateTime(2023, 7, 26) # End time
-delta = 86400  # 1 day in seconds
-stas = [2301, 2302, 2303, 2304, 2305, 2306, 2307, 2308, 2309, 2310, 2311, 2312, 2313, 2314, 2315, 2316, 
-        'G2301', 'G2302', 'G2303', 'G2304', 'G2305', 'G2306', 'G2307', 'G2308', 'G2309', 'G2310', 'G2311',
-        'G2312', 'G2313', 'G2314', 'G2315', 'G2316'] 
-stas = ['ZE.2304..GPZ'] # station IDs
-
-# set station info
-nowsta = stas[0]
-network, station, location, channel = nowsta.split('.')
-print(f"Station: {nowsta}")
-
-# define path where .mseed files are stored
-path = 'C:/Users/zzawol/Documents/seismic-data-iris/seismic_data/NO2304/GPZ'
-
-# check if the path exists, create if not
-if not os.path.exists(path):
-    print(f"Path '{path}' does not exist. Creating directory...")
-    os.makedirs(path, exist_ok=True)
-else:
-    print(f"Path '{path}' already exists.")
-
-file_pattern = f'{path}/{network}.{station}.*.{channel}*.mseed'
-
-# set up IRIS client
-DATASELECT = 'http://service.iris.edu/ph5ws/dataselect/1'
-c = fdsn.client.Client(
-    service_mappings={
-        'dataselect': DATASELECT,
-    },
-)
-
-# IRIS credentials
-username = 'zoe_zawol@partner.nps.gov'
-password = 'rJXKed4LZUHUE05g'
-c.set_credentials(username, password)
-
-# set up metadata
-client = Client("IRISPH5", timeout=600)
-inv = client.get_stations(network=network, station=station, location=location, channel=channel, level='response') 
+importlib.reload(set_workdir)
 
 ## main function to process data
-def process_data(start_date, end_date, stas, path):
+def process_data(start_date, end_date, delta, stas):
     """Main function to run through each day of data in timeframe and perform analyses"""
-    delta = 86400  # 1 day in seconds
+
+    # set station info
+    nowsta = stas[0]
+    network, station, location, channel = nowsta.split('.')
+    print(f"Station: {nowsta}")
+    
+    # define path where .mseed files are stored
+    if network == "ZE":
+        path = f'C:/Users/zzawol/Documents/iris-data/seismic_data/NO{station}/{channel}'
+    elif network == "ZD":
+        path = f'C:/Users/zzawol/Documents/iris-data/infrasound_data/{station}'
+    else:
+        raise ValueError(f"Unknown network code: {network}")
+        
+    # check if the path exists, create if not
+    if not os.path.exists(path):
+        print(f"Path '{path}' does not exist. Creating directory...")
+        os.makedirs(path, exist_ok=True)
+    else:
+        print(f"Path '{path}' already exists.")
+    
+    file_pattern = f'{path}/{network}.{station}.{location}.{channel}*.mseed'
+
+    # loop to make RSAM, spectra, PPSD, and temporal plots for each day in time frame
     current_date = start_date
     
     while current_date < end_date:
@@ -77,9 +58,12 @@ def process_data(start_date, end_date, stas, path):
 
         try:
             # reading local data for current date range
-            S = obspy.read(file_pattern, starttime=t1, endtime=t2)
+            S = obspy.read(file_pattern, starttime=t1, endtime=t2) # obspy read 
+
+            # set working directory to where getData.py is located - ensures checks for pre-downloaded data
+            set_workdir.set_workdir('getData.py')
             
-            # uses get_iris_data to ensure the data for this time range is downloaded
+            # uses get_iris_data to ensure data for this time range is downloaded
             print(f"Checking if any missing data for {t1} to {t2}, downloading if necessary.")
             getData.get_iris_data(t1, t2, stas, path)  # downloads any missing data if necessary
 
@@ -94,12 +78,15 @@ def process_data(start_date, end_date, stas, path):
                 S_ext = obspy.read(file_pattern, starttime=t2, endtime=spec_end) # read only the extra data
             
                 print(f"Checking if any missing data for {t2} to {spec_end}, downloading if necessary.")
+                set_workdir.set_workdir('getData.py')
                 getData.get_iris_data(t2, spec_end, stas, path) # downloads any missing data if necessary
 
                 # after calling get_iris_data, re-read local data (after ensuring it's downloaded)
                 S_ext = obspy.read(file_pattern, starttime=t2, endtime=spec_end) # read only the extra data
-                if S_ext[0].stats.sampling_rate != 350: # extra check
+                if network == "ZE" and S_ext[0].stats.sampling_rate != 350: # extra check
                     S_ext.resample(350)
+                elif network == "ZD" and S_ext[0].stats.sampling_rate != 120: # extra check
+                    S_ext.resample(120)
                 else:
                     pass
 
@@ -113,7 +100,8 @@ def process_data(start_date, end_date, stas, path):
             print("Making spectrogram")
             
             # plot scectrogram and RSAM
-            f1 = spectraPlay.plot_spectrogram(S1, t1, spec_end)  # pass S1 to plot_spectrogram function
+            set_workdir.set_workdir('spectraPlay.py')
+            f1 = spectraPlay.plot_spectrogram(S1, t1, spec_end, stas)  # pass S1 to plot_spectrogram function
 
             # ask user for frequency values after spectrogram
             print("Enter frequency values for temporal plot (comma-separated, takes in fractions and decimals):")
@@ -121,37 +109,56 @@ def process_data(start_date, end_date, stas, path):
             
             # process user input - converts fractions and regular floats
             user_freqs = []
-            user_periods = []
+            #user_periods = []
             for freq in user_inputs:
                 try:
-                    freq = freq.strip()  # clean up extra spaces
+                    freq = freq.strip() # clean up extra spaces
                     if '/' in freq:
-                        user_freqs.append(float(Fraction(freq)))  # handle fraction
+                        user_freqs.append(float(Fraction(freq))) # handle fraction
                     else:
-                        user_freqs.append(float(freq))  # handle float
+                        user_freqs.append(float(freq)) # handle float
                 except ValueError:
-                    print(f"Invalid input: {freq}. Using default values.")
-
-            user_periods = [1 / freq for freq in user_freqs]  # converts to periods for temporal plot
+                    print(f"Invalid input: {freq} Using default values.")
             
             # if user didn't provide any valid values, set defaults
             if not user_freqs:
                 print("No valid input detected. Using default frequency values.")
-                user_freqs = [100, 10, 1]  # default frequencies in Hz
+                user_freqs = [120, 70, 20] # default frequencies in Hz
+            user_periods = [1 / freq for freq in user_freqs] # converts to periods for temporal plot
 
             # plot PPSD
             print("Making PPSD and Temporal Plots")
-            PPSD.plot_ppsd(S, inv, t1, t2, user_periods)
+            set_workdir.set_workdir('PPSD.py')
+            PPSD.plot_ppsd(S, t1, t2, stas, user_periods)
             
             round_periods = ['%.4f' % per for per in user_periods]
-            print(f"Inputted frequencies: {user_freqs} --> periods: {round_periods}")  # for checking
-            # print(user_values)  # for checking
+            print(f"Inputted frequencies: {user_freqs} --> periods: {round_periods}") # for checking
+            # print(user_values) # for checking
             
         except Exception as e:
             print(f"An error occurred while processing data from {t1} to {t2}: {e}")
         
-        current_date += delta  # move to next day
+        current_date += delta # move to next day
+        
+# to run independently via .py file
 
-# call function
-process_data(start_date, end_date, stas, path)
-print(f"Analysis for {stas} from {start_date} to {end_date} complete.")
+if __name__ == "__main__":
+# setting up parameters
+
+    # define start and end time for the data range
+    start_date = UTCDateTime(2024, 8, 7) # Start time
+    end_date = UTCDateTime(2024, 8, 11) # End time
+    delta = 86400  # 1 day in seconds
+    stas = [2301, 2302, 2303, 2304, 2305, 2306, 2307, 2308, 2309, 2310, 2311, 2312, 2313, 2314, 2315, 2316, 
+            'G2301', 'G2302', 'G2303', 'G2304', 'G2305', 'G2306', 'G2307', 'G2308', 'G2309', 'G2310', 'G2311',
+            'G2312', 'G2313', 'G2314', 'G2315', 'G2316'] 
+    stas = ['ZE.2411..GPZ'] # station IDs
+    #stas = ['ZD.G2310.01.HDF'] # GEM station IDs
+
+    # call function
+    process_data(start_date, end_date, delta, stas)
+    print(f"Analysis for {stas} from {start_date} to {end_date} complete.")
+
+
+# run in jupyter by: %run Screening_Tool.py
+# or run in terminal by: python Screening_Tool.py
