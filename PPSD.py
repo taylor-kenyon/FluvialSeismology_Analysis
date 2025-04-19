@@ -20,10 +20,10 @@ def plot_ppsd(S, t1, t2, stas, user_values):
     nowsta = stas[0]
     network, station, location, channel = nowsta.split('.')
     if network == "ZE":
-        S.resample(300) # resample
+        S.resample(300) # resample from 350 to 300
         client = Client("IRISPH5", timeout=600) # 3C data
     elif network == "ZD":
-        S.resample(120) # resample
+        S.resample(100) # resample - not necessary but to make sure
         client = Client("IRIS", timeout=600) # GEM data
     else:
         raise ValueError(f"Unknown network code: {network}")
@@ -41,7 +41,7 @@ def plot_ppsd(S, t1, t2, stas, user_values):
 
     if ppsd is not None and len(ppsd.times_processed) > 0:
         print(f"Data accumulated for {(t2-t1)/(60*60*24)}-day periods starting on {t1}")
-        ppsd.plot(period_lim=(0.1, 150), cmap=pqlx, xaxis_frequency=True)
+        ppsd.plot(period_lim=(0.1,150), cmap=pqlx, xaxis_frequency=True)
         plt.close()
         #print(ppsd.times_processed)
 
@@ -50,6 +50,9 @@ def plot_ppsd(S, t1, t2, stas, user_values):
             ppsd.plot_temporal(user_values) # plot temporal plot with user values
             plt.show()
             plt.close()
+
+        #round_periods = ['%.4f' % per for per in user_periods]
+        #print(f"Inputted frequencies: {user_freqs} --> periods: {round_periods}")
 
     else:
         print(f"No PPSD data accumulated for {t1} to {t2}")
@@ -60,8 +63,11 @@ def plot_ppsd(S, t1, t2, stas, user_values):
 # ---------------------------
 # if running this script independently
 # ---------------------------
+
 if __name__ == '__main__':
     print("Running PPSD plotting script independently...")
+    
+    # setting up parameters for independent use
 
     # define time range
     start_date = UTCDateTime(2023, 7, 23)
@@ -77,23 +83,22 @@ if __name__ == '__main__':
     nowsta = stas[0]
     network, station, location, channel = nowsta.split('.')
 
-
-    # can probably delete the whole client section here, it's in main function - same for spectraPlay?
-    # can add path part to inside main function?
-
-    # define path where .mseed files are stored
+    # define path where .mseed files are stored and set frequencies for binning
     if network == "ZE":
+        # define path to store 3C files
         path = f'C:/Users/zzawol/Documents/iris-data/seismic_data/NO{station}/{channel}'
-        client = Client("IRISPH5", timeout=600) # 3C metadata
+        # set frequency values for binning
+        user_freqs = [120, 70, 20] # default seismic frequencies
+        user_periods = [1 / freq for freq in user_freqs] # convert to periods
     elif network == "ZD":
+        # define path where GEM files are stored
         path = f'C:/Users/zzawol/Documents/iris-data/infrasound_data/{station}'
-        client = Client("IRIS", timeout=600) # GEM metadata        ## not "IRISDMC" ?
+        # set frequency values for binning
+        user_freqs = [1, 10, 20] 
+        user_periods = [1 / freq for freq in user_freqs] # convert to periods
     else:
         raise ValueError(f"Unknown network code: {network}")
     
-    # create inventory for metadata  
-    inv = client.get_stations(network=network, station=station, location=location, channel=channel, level='response')
-
     # check if the path exists, create if not
     if not os.path.exists(path):
         print(f"Path '{path}' does not exist. Creating directory...")
@@ -106,9 +111,8 @@ if __name__ == '__main__':
     # read waveform
     S = read(file_pattern, starttime=start_date, endtime=end_date)
 
-    # set frequency values for binning
-    user_freqs = [120, 70, 20] # default frequencies in Hz
-    user_periods = [1 / freq for freq in user_freqs] # convert to default periods for temporal plot
+    round_periods = ['%.4f' % per for per in user_periods]
+    print(f"Inputted frequencies: {user_freqs} --> periods: {round_periods}")
 
     # call function
     plot_ppsd(S, start_date, end_date, stas, user_values=user_periods)
