@@ -74,10 +74,10 @@ def get_iris_data(t1, t2, stas, path):
 
                     if network == "ZE":
                         print('Resampling to 350')
-                        S.resample(350)  # resample to 350 Hz/s for 3C, 120 Hz/s for GEM
+                        S.resample(350)  # 350 Hz/s for 3C
                     if network == "ZD":
-                        print('Resampling to 120')
-                        S.resample(120)
+                        print('Resampling to 100')
+                        S.resample(100) # 100 Hz/s for GEM
 
                     # save data to .mseed files
                     print('Saving data to .mseed files...')
@@ -95,13 +95,13 @@ def get_iris_data(t1, t2, stas, path):
 
 
 # format for running independently 
-# these parameteres will be ignored when Screening_Tool calls getData since we will set the parameters in Screening_Tool
-# so we dont have to comment and uncomment when using this file in Screening_Tool vs independently 
+# parameters below will be ignored when Screening_Tool calls getData since the parameters are also in Screening_Tool
+# below will be read when running this file independently -- so we dont have to comment/uncomment function call here vs Tool
 
 if __name__ == "__main__":
     # set parameters here for standalone testing
-    start_date = UTCDateTime(2024, 7, 31) # Start time
-    end_date = UTCDateTime(2024, 8, 4) # End time
+    start_date = UTCDateTime(2024, 8, 8) # Start time
+    end_date = UTCDateTime(2024, 8, 12) # End time
     stas = [2301, 2302, 2303, 2304, 2305, 2306, 2307, 2308, 2309, 2310, 2311, 2312, 2313, 2314, 2315, 2316, 
             'G2301', 'G2302', 'G2303', 'G2304', 'G2305', 'G2306', 'G2307', 'G2308', 'G2309', 'G2310', 'G2311',
             'G2312', 'G2313', 'G2314', 'G2315', 'G2316'] 
