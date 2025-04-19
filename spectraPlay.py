@@ -14,8 +14,10 @@ def plot_spectrogram(S, t1, t2, stas):
     # set station info
     nowsta = stas[0]
     network, station, location, channel = nowsta.split('.')
+
+    # set max frequency range to plot
     if network == "ZE":
-        maxFreq = 150
+        maxFreq = 150    # 0.5*resample rate
     elif network == "ZD":
         maxFreq = 50 # edit value if resample changes?
     else:
@@ -43,8 +45,11 @@ def plot_spectrogram(S, t1, t2, stas):
 # ---------------------------
 # if running this script independently
 # ---------------------------
+
 if __name__ == "__main__":
-    # setting up parameters for standalone use
+    print("Running spectra plotting script independently...")
+
+    # setting up parameters for independent use
 
     # define start and end time for the data range
     start_date = UTCDateTime(2024, 7, 9)  # Start time
@@ -61,7 +66,7 @@ if __name__ == "__main__":
     nowsta = stas[0]
     network, station, location, channel = nowsta.split('.')
 
-    # define path where .mseed files are stored
+    # define path where .mseed files are stored - can probably move this into function
     print(f"Station: {nowsta}")
     if network == "ZE":
         path = f'C:/Users/zzawol/Documents/iris-data/seismic_data/NO{station}/{channel}'
