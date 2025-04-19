@@ -85,8 +85,8 @@ def process_data(start_date, end_date, delta, stas):
                 S_ext = obspy.read(file_pattern, starttime=t2, endtime=spec_end) # read only the extra data
                 if network == "ZE" and S_ext[0].stats.sampling_rate != 350: # extra check
                     S_ext.resample(350)
-                elif network == "ZD" and S_ext[0].stats.sampling_rate != 120: # extra check
-                    S_ext.resample(120)
+                elif network == "ZD" and S_ext[0].stats.sampling_rate != 100: # extra check
+                    S_ext.resample(100)
                 else:
                     pass
 
@@ -147,7 +147,7 @@ if __name__ == "__main__":
 
     # define start and end time for the data range
     start_date = UTCDateTime(2024, 8, 7) # Start time
-    end_date = UTCDateTime(2024, 8, 11) # End time
+    end_date = UTCDateTime(2024, 8, 8) # End time
     delta = 86400  # 1 day in seconds
     stas = [2301, 2302, 2303, 2304, 2305, 2306, 2307, 2308, 2309, 2310, 2311, 2312, 2313, 2314, 2315, 2316, 
             'G2301', 'G2302', 'G2303', 'G2304', 'G2305', 'G2306', 'G2307', 'G2308', 'G2309', 'G2310', 'G2311',
