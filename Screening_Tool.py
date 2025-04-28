@@ -11,14 +11,14 @@ from obspy.clients import fdsn
 from fractions import Fraction
 import waveformUtils
 import getData
-import PPSD
+import THE_PPSD
 import spectraPlay
 import set_workdir
 import importlib
 # in case .py files have been updated
 importlib.reload(waveformUtils)
 importlib.reload(getData)
-importlib.reload(PPSD)
+importlib.reload(THE_PPSD)
 importlib.reload(spectraPlay)
 importlib.reload(set_workdir)
 
@@ -57,8 +57,6 @@ def process_data(start_date, end_date, delta, stas):
         print(f"\nProcessing data for {t1} to {t2}")
 
         try:
-            # reading local data for current date range
-            S = obspy.read(file_pattern, starttime=t1, endtime=t2) # obspy read 
 
             # set working directory to where getData.py is located - ensures checks for pre-downloaded data
             set_workdir.set_workdir('getData.py')
@@ -67,18 +65,17 @@ def process_data(start_date, end_date, delta, stas):
             print(f"Checking if any missing data for {t1} to {t2}, downloading if necessary.")
             getData.get_iris_data(t1, t2, stas, path)  # downloads any missing data if necessary
 
-            # after calling get_iris_data, re-read local data (after ensuring it's downloaded)
-            S = obspy.read(file_pattern, starttime=t1, endtime=t2)
+            # reading local data for current date range
+            S = obspy.read(file_pattern, starttime=t1, endtime=t2) # obspy read 
             
             S1 = S.copy() # create a copy of the original stream for spectra
 
             # read an extra 6 mins of data to extend the stream
             spec_end = t2 + (6*60) # 6 minutes beyond original end time
             try:
-                S_ext = obspy.read(file_pattern, starttime=t2, endtime=spec_end) # read only the extra data
+                set_workdir.set_workdir('getData.py')
             
                 print(f"Checking if any missing data for {t2} to {spec_end}, downloading if necessary.")
-                set_workdir.set_workdir('getData.py')
                 getData.get_iris_data(t2, spec_end, stas, path) # downloads any missing data if necessary
 
                 # after calling get_iris_data, re-read local data (after ensuring it's downloaded)
@@ -128,8 +125,8 @@ def process_data(start_date, end_date, delta, stas):
 
             # plot PPSD
             print("Making PPSD and Temporal Plots")
-            set_workdir.set_workdir('PPSD.py')
-            PPSD.plot_ppsd(S, t1, t2, stas, user_periods)
+            set_workdir.set_workdir('THE_PPSD.py')
+            THE_PPSD.plot_ppsd(S, t1, t2, stas, user_periods)
             
             round_periods = ['%.4f' % per for per in user_periods]
             print(f"Inputted frequencies: {user_freqs} --> periods: {round_periods}") # for checking
@@ -146,14 +143,14 @@ if __name__ == "__main__":
 # setting up parameters
 
     # define start and end time for the data range
-    start_date = UTCDateTime(2024, 8, 7) # Start time
-    end_date = UTCDateTime(2024, 8, 8) # End time
+    start_date = UTCDateTime(2023, 8, 17) # Start time
+    end_date = UTCDateTime(2023, 8, 18) # End time
     delta = 86400  # 1 day in seconds
     stas = [2301, 2302, 2303, 2304, 2305, 2306, 2307, 2308, 2309, 2310, 2311, 2312, 2313, 2314, 2315, 2316, 
             'G2301', 'G2302', 'G2303', 'G2304', 'G2305', 'G2306', 'G2307', 'G2308', 'G2309', 'G2310', 'G2311',
             'G2312', 'G2313', 'G2314', 'G2315', 'G2316'] 
-    stas = ['ZE.2411..GPZ'] # station IDs
-    #stas = ['ZD.G2310.01.HDF'] # GEM station IDs
+    stas = ['ZE.2306..GPZ'] # station IDs
+    #stas = ['ZD.G2312.01.HDF'] # GEM station IDs
 
     # call function
     process_data(start_date, end_date, delta, stas)
