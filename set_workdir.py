@@ -1,4 +1,5 @@
 import os
+import sys
 
 def set_workdir(py_file=None): # py_path would be getData.py, spectraPlay.py, or PPSD.py
     """Sets the working directory depending on where the Python script or Jupyter notebook is located."""
