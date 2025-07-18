@@ -11,14 +11,14 @@ from obspy.clients import fdsn
 from fractions import Fraction
 import waveformUtils
 import getData
-import THE_PPSD
+import PPSD
 import spectraPlay
 import set_workdir
 import importlib
 # in case .py files have been updated
 importlib.reload(waveformUtils)
 importlib.reload(getData)
-importlib.reload(THE_PPSD)
+importlib.reload(PPSD)
 importlib.reload(spectraPlay)
 importlib.reload(set_workdir)
 
@@ -125,8 +125,8 @@ def process_data(start_date, end_date, delta, stas):
 
             # plot PPSD
             print("Making PPSD and Temporal Plots")
-            set_workdir.set_workdir('THE_PPSD.py')
-            THE_PPSD.plot_ppsd(S, t1, t2, stas, user_periods)
+            set_workdir.set_workdir('PPSD.py')
+            PPSD.plot_ppsd(S, t1, t2, stas, user_periods)
             
             round_periods = ['%.4f' % per for per in user_periods]
             print(f"Inputted frequencies: {user_freqs} --> periods: {round_periods}") # for checking
