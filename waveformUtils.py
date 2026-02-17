@@ -11,6 +11,7 @@ from obspy import read
 from obspy import Stream
 from obspy.clients.fdsn import Client
 from pathlib import Path
+from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
 
 def plotRelativeAlign(s0, masterIndex=0, normalize=True, figsize=(8, 10), shifts=None, picks=None, polarity=False, handle=None):
@@ -908,8 +909,14 @@ def multiDaySpectrogram(S, averageLength=3600, fftLength=60, minFreq=0.05, maxFr
     else:
         specgram = np.sqrt(specgram[:, :])
     _range = float(specgram.max() - specgram.min())
-    vmin = specgram.min() + vmin * _range
-    vmax = specgram.min() + vmax * _range
+    ##vmin = specgram.min() + vmin * _range
+    ##vmax = specgram.min() + vmax * _range
+    
+    # standardized color scaling to our preference instead of auto data range (commented out above) #
+    vmin=10
+    vmax=35
+    ##-------------------------------------------
+    
     norm = Normalize(vmin, vmax, clip=True)
     cmap = copy(plt.get_cmap(cmap))
     cmap.set_bad(alpha=0.0)
@@ -946,7 +953,24 @@ def multiDaySpectrogram(S, averageLength=3600, fftLength=60, minFreq=0.05, maxFr
         else:
             ax = f.add_subplot(111)
 
-    ax.pcolormesh(alldates, np.flipud(freq), specgram, norm=norm, cmap=cmap, shading='gouraud') # sets pixel dimensions
+    mesh = ax.pcolormesh(alldates, np.flipud(freq), specgram, norm=norm, cmap=cmap, shading='gouraud') # sets pixel dimensions
+    
+    ## ----------colorbar-----------------------------------------
+    # assigns line above to variable 'mesh' for colorbar
+    # creates a small inset axis (colorbar scale) outside the main plot
+    cax = inset_axes(ax, width="2%", height="100%", loc='lower left',
+                    bbox_to_anchor=(1.02, 0., 1, 1),
+                    bbox_transform=ax.transAxes,
+                    borderpad=0)
+
+    cbar = plt.colorbar(mesh, cax=cax)
+    cbar.set_label("Power (dB)")
+
+    # cbar = plt.colorbar(mesh, ax=ax)
+    # cbar.set_label("Power (dB)")
+
+    ##------------------------------------------------------------
+
     locator = mdates.AutoDateLocator(minticks=5, maxticks=15)
     formatter = mdates.ConciseDateFormatter(locator)
     ax.xaxis.set_major_locator(locator)
@@ -967,7 +991,14 @@ def multiDaySpectrogram(S, averageLength=3600, fftLength=60, minFreq=0.05, maxFr
         else:
             ax2 = f.add_subplot(212, sharex=ax)
             
-        ax2.pcolormesh(alldates, np.flipud(freq), specgram, norm=norm, cmap=cmap, shading='gouraud')
+        mesh2 = ax2.pcolormesh(alldates, np.flipud(freq), specgram, norm=norm, cmap=cmap, shading='gouraud')
+        cax = inset_axes(ax, width="2%", height="100%", loc='lower left',
+                    bbox_to_anchor=(1.02, 0., 1, 1),
+                    bbox_transform=ax.transAxes,
+                    borderpad=0)
+        cbar = plt.colorbar(mesh2, cax=cax)
+        cbar.set_label("Power (dB)")
+
         locator = mdates.AutoDateLocator(minticks=5, maxticks=15)
         formatter = mdates.ConciseDateFormatter(locator)
         ax2.xaxis.set_major_locator(locator)
