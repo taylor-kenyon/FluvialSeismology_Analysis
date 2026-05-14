@@ -47,7 +47,7 @@ def plot_calib_node(sta, calib_root, output_root):
     time = tr.times(reftime=test_start)
 
     # output paths
-    calib_dir = os.path.join(output_root, "calibration", station)
+    calib_dir = os.path.join(output_root, "calibration", f"C{station}")
     os.makedirs(calib_dir, exist_ok=True)
 
     base_tag = f"{calib_sta}_{test_start.strftime('%Y%m%d%H%M%S')}"
@@ -67,12 +67,12 @@ def plot_calib_node(sta, calib_root, output_root):
     ax.xaxis.set_major_locator(MultipleLocator(120))
     ax.xaxis.set_minor_locator(MultipleLocator(30))
     ax.set_xlim(np.min(time), np.max(time))
-    ax.set_ylim(np.min(tr.data)-10, np.max(tr.data)+10)
+    #ax.set_ylim(np.min(tr.data)-10, np.max(tr.data)+10)
     fig.tight_layout()
 
     wave_path = os.path.join(calib_dir, f"{base_tag}_waveform.png")
 
-    print("Saving:", wave_path)
+    print("Saving calibration node waveform png to:", wave_path)
     fig.savefig(wave_path, dpi=600, bbox_inches='tight')
     plt.close(fig)
 
@@ -120,13 +120,12 @@ def plot_calib_node(sta, calib_root, output_root):
 
     spec_path = os.path.join(calib_dir, f"{base_tag}_spectrogram.png")
 
-    print("Saving:", spec_path)
+    print("Saving calibration node spectrogram to:", spec_path)
     fig.savefig(spec_path, dpi=600, bbox_inches='tight')
     plt.close(fig)
 
     return tr, calib_sta, test_start, test_end
 
-# ***************************************************************************************************************************
 
 # =========================================================
 # ORIGINAL NODE
@@ -148,6 +147,7 @@ def plot_og_node(sta, og_root, output_root, test_start, test_end):
     files = glob(os.path.join(orig_dir, f"{og_sta}_*mseed"))
     print("\n")
     print("Total original node files found:", len(files))
+    print("\n")
 
     st = Stream()
 
@@ -160,6 +160,9 @@ def plot_og_node(sta, og_root, output_root, test_start, test_end):
 
     st.merge(method=1)
     tr = st[0]
+
+    print("\nOG station trace:")
+    print(tr)
 
     # trim to experiment window
     #tr.trim(starttime=test_start, endtime=test_end)
@@ -185,12 +188,14 @@ def plot_og_node(sta, og_root, output_root, test_start, test_end):
     ax.xaxis.set_major_locator(MultipleLocator(120))
     ax.xaxis.set_minor_locator(MultipleLocator(30))
     ax.set_xlim(np.min(time), np.max(time))
-    ax.set_ylim(np.min(tr.data)-10, np.max(tr.data)+10)
+    #ax.set_ylim(np.min(tr.data)-10, np.max(tr.data)+10)
+    ax.margins(y=0.05)
+
     fig.tight_layout()
 
     wave_path = os.path.join(og_dir, f"{base_tag}_waveform.png")
 
-    print("Saving:", wave_path)
+    print("Saving original node waveform png to:", wave_path)
     fig.savefig(wave_path, dpi=600, bbox_inches='tight')
     plt.close(fig)
 
@@ -239,13 +244,13 @@ def plot_og_node(sta, og_root, output_root, test_start, test_end):
 
     spec_path = os.path.join(og_dir, f"{base_tag}_spectrogram.png")
 
-    print("Saving:", spec_path)
+    print("Saving original node spectrogram to:", spec_path)
     fig.savefig(spec_path, dpi=600, bbox_inches='tight')
     plt.close(fig)
 
     return tr, og_sta#, test_start
 
-***************************************************************************************************************************
+
 # =====================================================
 # IMPACT WINDOWS
 # =====================================================
@@ -259,13 +264,19 @@ def impact_window(tr, test_start, t1, t2, fs, out_dir, tag):
     # global relative time axis
     time = sub.times(reftime=test_start)
 
-    impact_dir = os.path.join(out_dir, "impact_windows", station)
-    os.makedirs(impact_dir, exist_ok=True)
+    # impact_dir = os.path.join(out_dir, "impact_windows", station)
+    # os.makedirs(impact_dir, exist_ok=True)
 
     base_tag = f"{tag}_{int(t1)}-{int(t2)}"
 
     window_start = test_start + t1
     window_end = test_start + t2
+
+    window_folder = (f"{window_start.strftime('%Y%m%d')}_{window_start.strftime('%H%M%S')}_{window_end.strftime('%H%M%S')}")
+
+    impact_dir = os.path.join(out_dir, "impact_windows", station, window_folder) # second to last: , station.replace("C", "")
+
+    os.makedirs(impact_dir, exist_ok=True)
 
     base_tag = (f"{tag}_{window_start.strftime('%Y%m%d')}_{window_start.strftime('%H%M%S')}_{window_end.strftime('%H%M%S')}")
 
@@ -300,7 +311,7 @@ def impact_window(tr, test_start, t1, t2, fs, out_dir, tag):
     #plt.show()
 
     wave_path = os.path.join(impact_dir, f"{base_tag}_waveform.png")
-    print("Saving waveform to:", wave_path)
+    print("Saving impact window waveform to:", wave_path)
 
     fig.savefig(wave_path, dpi=600, bbox_inches='tight')
 
@@ -357,7 +368,7 @@ def impact_window(tr, test_start, t1, t2, fs, out_dir, tag):
     fig.tight_layout()
 
     spec_path = os.path.join(impact_dir, f"{base_tag}_spectrogram.png")
-    print("Saving spectrogram to:", spec_path)
+    print("Saving impact window spectrogram to:", spec_path)
     fig.savefig(spec_path, dpi=600, bbox_inches='tight')
     plt.close(fig)
     #plt.show()
@@ -368,7 +379,7 @@ def impact_window(tr, test_start, t1, t2, fs, out_dir, tag):
 
 if __name__ == "__main__":
 
-    """To Use This Script:
+    """TO USE This Script:
         1) edit 'STA' below to select desired field location, calibration node and original node will plot automatically
             -- can change paths of where to save files as well
         2) run in terminal
@@ -376,6 +387,7 @@ if __name__ == "__main__":
         4) enter impact windows of interest (eg: "60-120") --> enter
         5) continue doing so with as many windows of interest as desired OR put q --> enter to finish
        """
+
     """Notes:
         -- full experiment window: 1s FFT window, 80% overlap
         -- impact set window: 0.25s FFT window, 80% overlap
@@ -383,33 +395,36 @@ if __name__ == "__main__":
 
     # -----------------------------------------------------
 
-    STA = "ZE.2516..GPZ"
+    # station ID -- use original node, calib node will get paired
+    STA = "ZE.2510..GPZ"
     network, station, location, channel = STA.split('.')
 
+    # paths where data exists
     OG_ROOT = r"D:/2025_MSEED_From_Nodes_rename"
     CALIB_ROOT = r"D:/calibration_rename"
 
+    # parent path to save pngs
     OUTPUT_ROOT = r"C:/Users/zzawol/OneDrive - DOI/Documents/MORA25/FluvialSeismology_Analysis/calib_testing"
 
     # -----------------------------------------------------
-    # CALIBRATION FIRST (defines experiment window)
+    # CALIBRATION NODE PLOTS (defines experiment window)
     # -----------------------------------------------------
 
     trC, calib_sta, t0, t1 = plot_calib_node(STA, CALIB_ROOT, OUTPUT_ROOT)
 
     # -----------------------------------------------------
-    # ORIGINAL NODE (trimmed to same window)
+    # ORIGINAL NODE PLOTS (trimmed to same window)
     # -----------------------------------------------------
 
     trO, og_sta = plot_og_node(STA, OG_ROOT, OUTPUT_ROOT, t0, t1) #, t0O
 
     # -----------------------------------------------------
-    # SELECT IMPACT WINDOW
+    # SELECT IMPACT WINDOW(S) AND PLOT
     # -----------------------------------------------------
 
     while True:
-        print("Enter time windows in seconds (hyphen-separated) to visualize data more closely.")
-        user_input = input("Example: 160-250, 1040-1075"
+        print("Enter time windows in seconds to visualize data more closely.")
+        user_input = input("Example input: (160, 250), (1040, 1075)"
         "\nor type 'q' to quit\n")
 
         if user_input.lower() == 'q':
@@ -417,11 +432,25 @@ if __name__ == "__main__":
 
         try:
             windows = []
-            for item in user_input.split(','):
-                start, end = item.split('-')
+            for item in user_input.split('),'):
+
+                # remove parentheses/spaces
+                item = item.replace('(', '').replace(')', '').strip()
+
+                # split start/end values
+                start, end = item.split(',')
+
                 windows.append((float(start), float(end)))
 
+            print("Windows selected (s):", windows)
+                # utc_w_start = t0 + start
+                # utc_w_end = t0 + end
+                # print("Windows selected (UTC):", f"{utc_w_start.strftime('%Y%m%d')}_{utc_w_start.strftime('%H%M%S')}_{utc_w_end.strftime('%H%M%S')}")
+
             for w_start, w_end in windows:
+                utc_w_start = t0 + w_start
+                utc_w_end = t0 + w_end
+                print("Windows selected (UTC):", f"{utc_w_start.strftime('%Y%m%d')}_{utc_w_start.strftime('%H%M%S')}_{utc_w_end.strftime('%H%M%S')}")
 
                 # calibration impact window
                 impact_window(tr=trC, test_start=t0, t1=w_start, t2=w_end, fs=trC.stats.sampling_rate, out_dir=OUTPUT_ROOT, tag=calib_sta)
@@ -429,7 +458,8 @@ if __name__ == "__main__":
                 impact_window(tr=trO, test_start=t0, t1=w_start, t2=w_end, fs=trO.stats.sampling_rate, out_dir=OUTPUT_ROOT, tag=og_sta)
 
         except Exception as e:
-            print("Invalid input:", e)
+            print("Error:", e)
+            print("Invalid format, use format (t0, t1), (t2, t3)")
 
 
     print("\nDONE.")
